@@ -23,8 +23,22 @@
 </main>
 
 <footer>
-	<p>visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to learn SvelteKit</p>
+    <div class="social-icons">
+        <a href="https://github.com/hlee18lee46" target="_blank">
+            <img src="/icons/github.png" alt="GitHub" />
+        </a>
+        <a href="https://devpost.com/hlee18lee46" target="_blank">
+            <img src="/icons/devpost.png" alt="Devpost" />
+        </a>
+        <a href="https://www.linkedin.com/in/hanknowstech" target="_blank">
+            <img src="/icons/linkedin.png" alt="LinkedIn" />
+        </a>
+        <a href="/resume.pdf" target="_blank">
+            <img src="/icons/resume.png" alt="Resume" />
+        </a>
+    </div>
 </footer>
+
 
 <style>
 	main {
@@ -55,4 +69,26 @@
 			padding: 40px 0;
 		}
 	}
+
+	    footer {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .social-icons img {
+        width: 30px;
+        height: 30px;
+        transition: transform 0.2s;
+    }
+
+    .social-icons img:hover {
+        transform: scale(1.2);
+    }
 </style>
