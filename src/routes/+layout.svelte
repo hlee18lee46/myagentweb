@@ -37,6 +37,8 @@
             <img src="/icons/resume.png" alt="Resume" />
         </a>
     </div>
+	<p>Click icons above for profile and resume.</p>
+	<p>Made by Han 2025</p>
 </footer>
 
 

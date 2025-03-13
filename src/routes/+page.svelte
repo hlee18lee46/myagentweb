@@ -1,64 +1,71 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, afterUpdate } from "svelte";
     import { writable } from "svelte/store";
 
     let message = "";
     let messages = writable([]);
+    let messagesEnd;
 
     async function sendMessage() {
         if (message.trim() === "") return;
 
-        // Append user message
         messages.update(m => [...m, { sender: "You", text: message }]);
 
-        // Send request to backend
         try {
-            const response = await fetch("/api/chat", {
+            const response = await fetch("http://127.0.0.1:8000/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: message.trim() })
             });
+
             const data = await response.json();
-            
-            // Append bot response
             messages.update(m => [...m, { sender: "Agent", text: data.reply }]);
         } catch (error) {
-            console.error("Error sending message:", error);
+            console.error("Error:", error);
+            messages.update(m => [...m, { sender: "Agent", text: "Oops! Something went wrong. Try again later." }]);
         }
 
-        message = ""; // Clear input field
+        message = "";
     }
 
     function handleKeyDown(event) {
         if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault(); // Prevents new line in textarea
+            event.preventDefault();
             sendMessage();
         }
     }
+
+    // Auto-scroll behavior when messages update
+    afterUpdate(() => {
+        messagesEnd?.scrollIntoView({ behavior: "smooth" });
+    });
 </script>
 
 <section class="chat-container">
     <!-- Profile Section -->
     <aside class="profile-section">
+		<h3>Chat with Me!</h3>
         <img src="/profile.jpg" alt="Profile Picture" class="profile-img" />
         <p class="profile-description">
-            Hi, My name is Han Lee. 👋. <br /><br />
-            I graduated from U of Florida with Bachelor's in Computer Science, and I am pursuing a Master's in Computer Sceince at Georgia Institute of Technology. <br /><br />
-			I build iOS application, unity-based games, Machine Learning Modles, full-stack web app and hardware using Arduinos! <br /><br />
-			I like traveling, watching NBA and also love going to a bunch of hackathons!<br />
+            Hi, My name is <b>Han.</b> 👋. <br /><br />
+            I graduated from U of Florida with Bachelor's in Computer Science, and I am pursuing a Master's in Computer Sceince at Georgia Institute of Technology. I interned as a software engineer intern at Boeing Intelligence & Analytics in 2024.<br /><br />
+			I build iOS application, unity-based games, Machine Learning Models, full-stack web app and hardware using Arduinos! <br /><br />
+			I like traveling, watching NBA and also love going to a bunch of hackathons!<br /><br />
 			Chat with me about my projects!
         </p>
     </aside>
 
     <!-- Chat Section -->
     <div class="chat-area">
-        <div class="messages">
-            {#each $messages as msg}
-                <div class="message {msg.sender === 'You' ? 'user-message' : 'agent-message'}">
-                    <strong>{msg.sender}:</strong> {msg.text}
-                </div>
-            {/each}
-        </div>
+		<div class="messages">
+			{#each $messages as msg}
+				<div class="message {msg.sender === 'You' ? 'user-message' : 'agent-message'}">
+					<strong>{msg.sender}:</strong> {msg.text}
+				</div>
+			{/each}
+			<div bind:this={messagesEnd}></div>  <!-- Invisible div for auto-scrolling -->
+		</div>
+
         <div class="input-area">
             <textarea
                 bind:value={message}
