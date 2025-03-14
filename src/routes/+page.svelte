@@ -13,7 +13,7 @@ async function sendMessage() {
     messages.update(m => [...m, { sender: "You", text: message }]);
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/chat", {
+        const response = await fetch("https://myagent-backend.onrender.com/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: message.trim() }) // Ensure proper key
@@ -24,8 +24,17 @@ async function sendMessage() {
         let replyText = "";
 
         if (data.results?.length) {
-            // If results exist, format project data
-            replyText = data.results
+            // Use a Set to filter unique projects based on GitHub URL
+            const uniqueProjects = new Map();
+
+            data.results.forEach((project) => {
+                if (!uniqueProjects.has(project.html_url)) {
+                    uniqueProjects.set(project.html_url, project);
+                }
+            });
+
+            // Format project data without duplicates
+            replyText = Array.from(uniqueProjects.values())
                 .map(r => 
                     `<div>
                         <h3>📌 ${r.name}</h3>
@@ -48,9 +57,13 @@ async function sendMessage() {
                         </ul>
 
                         <p>
-                            🔗 <strong><a href="${r.html_url}" target="_blank">GitHub</a></strong><br>
-                            🌍 <strong>Demo:</strong> ${r.demo_link !== "No link available" ? `<a href="${r.demo_link}" target="_blank">${r.demo_link}</a>` : "No demo available"}<br>
-                            🏆 <strong>Devpost:</strong> ${r.devpost_link !== "No link available" ? `<a href="${r.devpost_link}" target="_blank">${r.devpost_link}</a>` : "No Devpost available"}
+                            🔗 <strong>GitHub:</strong> <a href="${r.html_url}" target="_blank" rel="noopener noreferrer">${r.html_url}</a><br>
+                            🌍 <strong>Demo:</strong> ${r.demo_link !== "No link available" 
+                                ? `<a href="${r.demo_link}" target="_blank" rel="noopener noreferrer">${r.demo_link}</a>` 
+                                : "No demo available"}<br>
+                            🏆 <strong>Devpost:</strong> ${r.devpost_link !== "No link available" 
+                                ? `<a href="${r.devpost_link}" target="_blank" rel="noopener noreferrer">${r.devpost_link}</a>` 
+                                : "No Devpost available"}
                         </p>
                     </div>`
                 )
@@ -107,11 +120,13 @@ async function sendMessage() {
 		<div class="messages">
 			{#each $messages as msg}
 				<div class="message {msg.sender === 'You' ? 'user-message' : 'agent-message'}">
-					<strong>{msg.sender}:</strong> {@html msg.text} <!-- Ensures HTML formatting works -->
+					<strong>{msg.sender}:</strong> {@html msg.text} <!-- Enables HTML rendering -->
 				</div>
 			{/each}
 			<div bind:this={messagesEnd}></div>  <!-- Invisible div for auto-scrolling -->
 		</div>
+
+
 
 
         <div class="input-area">
