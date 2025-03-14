@@ -6,27 +6,74 @@
     let messages = writable([]);
     let messagesEnd;
 
-    async function sendMessage() {
-        if (message.trim() === "") return;
+async function sendMessage() {
+    if (message.trim() === "") return;
 
-        messages.update(m => [...m, { sender: "You", text: message }]);
+    // Add user's message to chat
+    messages.update(m => [...m, { sender: "You", text: message }]);
 
-        try {
-            const response = await fetch("http://127.0.0.1:8000/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: message.trim() })
-            });
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: message.trim() }) // Ensure proper key
+        });
 
-            const data = await response.json();
-            messages.update(m => [...m, { sender: "Agent", text: data.reply }]);
-        } catch (error) {
-            console.error("Error:", error);
-            messages.update(m => [...m, { sender: "Agent", text: "Oops! Something went wrong. Try again later." }]);
+        const data = await response.json();
+
+        let replyText = "";
+
+        if (data.results?.length) {
+            // If results exist, format project data
+            replyText = data.results
+                .map(r => 
+                    `<div>
+                        <h3>📌 ${r.name}</h3>
+                        <p><strong>🔹 Description:</strong> ${r.description || "No description available"}</p>
+                        
+                        <p><strong>🛠 Tech Stack:</strong></p>
+                        <ul>
+                            ${r.tech_stack 
+                                ? Object.entries(r.tech_stack)
+                                    .map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`)
+                                    .join("")
+                                : "<li>Not specified</li>"}
+                        </ul>
+
+                        <p><strong>✨ Features:</strong></p>
+                        <ul>
+                            ${r.features?.length 
+                                ? r.features.map(feature => `<li>${feature}</li>`).join("")
+                                : "<li>No features listed.</li>"}
+                        </ul>
+
+                        <p>
+                            🔗 <strong><a href="${r.html_url}" target="_blank">GitHub</a></strong><br>
+                            🌍 <strong>Demo:</strong> ${r.demo_link !== "No link available" ? `<a href="${r.demo_link}" target="_blank">${r.demo_link}</a>` : "No demo available"}<br>
+                            🏆 <strong>Devpost:</strong> ${r.devpost_link !== "No link available" ? `<a href="${r.devpost_link}" target="_blank">${r.devpost_link}</a>` : "No Devpost available"}
+                        </p>
+                    </div>`
+                )
+                .join("<hr>");  // Add a horizontal line between projects for better readability
+        } else if (data.reply) {
+            // If no results but has a reply (e.g., greetings or fallback)
+            replyText = `<p>${data.reply.replace(/\n/g, "<br>")}</p>`; // Ensure new lines are respected
+        } else {
+            replyText = "<p>No results found.</p>";
         }
 
-        message = "";
+        // Update the chat with the response
+        messages.update(m => [...m, { sender: "Han", text: replyText }]);
+    } catch (error) {
+        console.error("Error:", error);
+        messages.update(m => [...m, { sender: "Han", text: "<p>Oops! Something went wrong. Try again later.</p>" }]);
     }
+
+    message = "";
+}
+
+
+
 
     function handleKeyDown(event) {
         if (event.key === "Enter" && !event.shiftKey) {
@@ -37,7 +84,7 @@
 
     // Auto-scroll behavior when messages update
     afterUpdate(() => {
-        messagesEnd?.scrollIntoView({ behavior: "smooth" });
+        if (messagesEnd) messagesEnd.scrollIntoView({ behavior: "smooth" });
     });
 </script>
 
@@ -60,11 +107,12 @@
 		<div class="messages">
 			{#each $messages as msg}
 				<div class="message {msg.sender === 'You' ? 'user-message' : 'agent-message'}">
-					<strong>{msg.sender}:</strong> {msg.text}
+					<strong>{msg.sender}:</strong> {@html msg.text} <!-- Ensures HTML formatting works -->
 				</div>
 			{/each}
 			<div bind:this={messagesEnd}></div>  <!-- Invisible div for auto-scrolling -->
 		</div>
+
 
         <div class="input-area">
             <textarea
